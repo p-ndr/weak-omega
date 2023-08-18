@@ -316,14 +316,32 @@ Lemma freeVariable : forall (Γ : context) (L : term) (σ : type),
                 + reflexivity.
                 + apply H2. Qed.
 
- 
+(* Lemma sort_context : forall (Γ : context), (Γ ⊢ kind_box * )
+    Proof.
+        intros Γ. induction Γ.
+        - apply sort.
+        - destruct a.
+            + apply weakkind.
+                * induction Γ.
+                {- simpl. reflexivity. }
+                {- apply context_shrink in IHΓ0. } *)
+
+Inductive subcontext : context -> context -> Prop :=
+| subrefl : forall Γ, subcontext Γ Γ
+| sub_addterm : forall Γ t σ, (check_term t Γ = false) -> subcontext Γ ((t :# σ) :: Γ)
+| sub_addtype : forall Γ s τ, (check_type s Γ = false) -> subcontext Γ ((s :! τ) :: Γ)
+.
+Infix "⊆" := subcontext (at level 120).
+
 (** The following lemmas are simply stated but not proved, due to little time and the exhaustive amount of
 proofs we have to write! *)
-Lemma thinning : forall (Γ Γ' : context) (M : term) (σ : type),
-    (forall (d : declaration), In d Γ -> In d Γ') ->
-    (Γ ⊢ term_type M σ) ->
-        (Γ' ⊢ term_type M σ).
-Admitted.
+Lemma thinning : forall (Γ Γ' : context) (M : term) (σ : type) (κ : kind),
+    (Γ ⊆ Γ') ->
+    (((Γ ⊢ term_type M σ) -> (Γ' ⊢ term_type M σ)) \/ ((Γ ⊢ type_kind σ κ) -> (Γ' ⊢ type_kind σ κ))).
+Proof.
+    intros Γ Γ' M σ κ. intros. inversion H.
+    - left. intros H2. apply H2.
+    - left. intros P. rewrite -> H2. Search List.
 
 Lemma substitution : forall (Γ Γ' : context) (x : termorder) (M N : term) (σ τ : type),
     (Γ' ++ (x :# σ) :: Γ ⊢ term_type M τ) ->
